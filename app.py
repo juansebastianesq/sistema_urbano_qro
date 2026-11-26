@@ -8,8 +8,10 @@ from src.queries import (
     obtener_resumen_general,
     obtener_servicios,
 )
+from src.views.fuentes import mostrar_fuentes_metodologia
 from src.views.poblacion import mostrar_analisis_poblacional
 from src.views.servicios import mostrar_analisis_servicios
+from src.views.simulador import mostrar_simulador
 
 st.set_page_config(
     page_title="Sistema de Analisis Urbano - Queretaro",
@@ -185,10 +187,16 @@ def main():
                 cargar_indicadores,
                 cargar_datos_servicios,
             )
-        else:
-            st.title(seccion)
-            st.info(
-                "Esta sección se construirá en el siguiente paso del proyecto."
+        elif seccion == "Simulador de escenarios":
+            mostrar_simulador(
+                cargar_poblacion(),
+                cargar_datos_servicios(),
+            )
+        elif seccion == "Fuentes y metodología":
+            mostrar_fuentes_metodologia(
+                cargar_fuentes(),
+                cargar_indicadores(),
+                cargar_datos_servicios(),
             )
     except Exception as exc:
         st.error(
