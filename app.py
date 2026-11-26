@@ -8,6 +8,8 @@ from src.queries import (
     obtener_resumen_general,
     obtener_servicios,
 )
+from src.views.poblacion import mostrar_analisis_poblacional
+from src.views.servicios import mostrar_analisis_servicios
 
 st.set_page_config(
     page_title="Sistema de Analisis Urbano - Queretaro",
@@ -57,7 +59,6 @@ def mostrar_inicio():
     df_poblacion = cargar_poblacion()
     df_servicios = cargar_servicios()
 
-    # Calculo de la ultima poblacion y crecimiento porcentual si hay al menos 2 censos
     ultimo_anio = None
     ultima_pob = None
     delta_pob = None
@@ -176,10 +177,18 @@ def main():
     try:
         if seccion == "Inicio - Panel general":
             mostrar_inicio()
+        elif seccion == "Análisis poblacional":
+            mostrar_analisis_poblacional(cargar_poblacion())
+        elif seccion == "Análisis de servicios urbanos":
+            mostrar_analisis_servicios(
+                cargar_servicios(),
+                cargar_indicadores,
+                cargar_datos_servicios,
+            )
         else:
             st.title(seccion)
             st.info(
-                "Esta sección se construirá en los siguientes pasos del proyecto."
+                "Esta sección se construirá en el siguiente paso del proyecto."
             )
     except Exception as exc:
         st.error(
