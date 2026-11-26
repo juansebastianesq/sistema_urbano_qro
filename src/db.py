@@ -4,10 +4,11 @@ import mysql.connector
 import pandas as pd
 
 
-def _obtener_config_db() -> dict:
-    """Lee las credenciales de MySQL desde Streamlit secrets o el archivo local."""
+def cargar_config_db() -> dict:
+    """Lee las credenciales de MySQL desde st.secrets o .streamlit/secrets.toml."""
     try:
         import streamlit as st
+
         if "mysql" in st.secrets:
             return dict(st.secrets["mysql"])
     except Exception:
@@ -16,7 +17,7 @@ def _obtener_config_db() -> dict:
     ruta_secrets = Path(__file__).resolve().parent.parent / ".streamlit" / "secrets.toml"
     if not ruta_secrets.exists():
         raise FileNotFoundError(
-            "No se encontro .streamlit/secrets.toml ni secretos configurados."
+            "No se encontro .streamlit/secrets.toml ni st.secrets['mysql']."
         )
 
     with open(ruta_secrets, "rb") as archivo:
@@ -25,36 +26,36 @@ def _obtener_config_db() -> dict:
 
 
 def obtener_conexion():
-    """Abre y devuelve una conexion activa a MySQL."""
-    cfg = _obtener_config_db()
-    parametros = {
+    """Abre y devuelve una conexion a MySQL (local o nube con SSL)."""
+    cfg = cargar_config_db()
+    opciones = {
         "host": cfg["host"],
         "port": int(cfg.get("port", 3306)),
         "user": cfg["user"],
         "password": cfg["password"],
         "database": cfg["database"],
+        "connection_timeout": 15,
     }
-    if cfg.get("ssl_ca"):
-        parametros["ssl_ca"] = cfg["ssl_ca"]
-    return mysql.connector.connect(**parametros)
+    if cfg.get("ssl", False):
+        opciones["ssl_disabled"] = False
+        opciones["ssl_verify_cert"] = False
+    return mysql.connector.connect(**opciones)
 
 
-def ejecutar_consulta(sql: str, params: tuple | None = None) -> pd.DataFrame:
-    """Ejecuta una consulta SELECT y devuelve el resultado como DataFrame de Pandas."""
+def ejecutar_consulta(sql: str, params=None) -> pd.DataFrame:
+    """Ejecuta una consulta SELECT y devuelve un DataFrame de Pandas."""
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor(dictionary=True)
-        try:
-            cursor.execute(sql, params or ())
-            filas = cursor.fetchall()
-            return pd.DataFrame(filas)
-        finally:
-            cursor.close()
+        cursor.execute(sql, params or ())
+        filas = cursor.fetchall()
+        return pd.DataFrame(filas)
     finally:
+        cursor.close()
         conexion.close()
 
 
 if __name__ == "__main__":
-    df_servicios = ejecutar_consulta("SELECT * FROM servicio;")
-    print("Conexion exitosa a MySQL desde Python + Pandas.")
-    print(df_servicios)
+    df = ejecutar_consulta("SHOW TABLES;")
+    print("Conexion exitosa. Tablas encontradas:")
+    print(df)
